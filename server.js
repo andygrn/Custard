@@ -16,7 +16,7 @@
 		CUSTARD.generate('bacon', input, function(error, template){
 		
 			if ( error ) {
-			
+			console.log(error);
 				response.writeHead(500);
 				response.end();
 			
