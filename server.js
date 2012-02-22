@@ -30,38 +30,59 @@ http.createServer(function(request, response) {
 			}
 			else {
 			
-				var template = new custard(data),
-					css = 'body{color:#333; font-family:Arial, Helvetica, sans-serif; text-align:center;}',
-					html_head = [
+				var template = new custard(),
+					css = 'body{color:#333; font-family:Arial, Helvetica, sans-serif; text-align:center;}';
+				
+//				Set Custard to use the HTML tag set
+				template.addTagSet('h', require('./tags/html'));
+				
+//				Add a custom tag set
+				template.addTagSet('content', {
+				
+					'title' : 'Page title!',
+					'paragraph1' : 'Paragraph 1 content',
+					'paragraph2' : 'Paragraph 2 content',
+					
+					'superEmphasise' : function(text){
+						return text.toUpperCase() + '!!!';
+					}
+				
+				});
+				
+//				Add a single tag to a new set
+				template.addTagToSet('extras', 'getHead', function(){
+					var html_head = [
 						'<link rel="icon" type="image/png" href="favicon.png">',
 						'<style type="text/css">',
 						css,
 						'</style>'
 					];
-				
-//				Set Custard to use the HTML handlers set
-				template.addHandlerSet(require('./handlers/html'));
-				
-//				Add a couple of custom handlers before rendering
-				template.addHandler('superEmphasise', function(text){
-					return text.toUpperCase() + '!!!';
-				});
-				
-				template.addHandler('getHead', function(){
 					return html_head.join('');
 				});
 				
-				var html = template.render();
+				template.render(data, function(error, html){
 				
-				response.writeHead(200, {
-					'Content-Type': 'text/html',
-					'Content-Length' : html.length
+					if ( error ) {
+					
+						response.writeHead(500);
+						response.end('<pre>' + error.stack + '</pre>');
+					
+					}
+					else {
+					
+						response.writeHead(200, {
+							'Content-Type': 'text/html',
+							'Content-Length' : html.length
+						});
+						
+						response.end(html);
+					
+					}
+				
 				});
-				
-				response.end(html);
 			
 			}
-
+		
 		});
 	
 	}

@@ -1,18 +1,14 @@
-t.doctype('html5'),
-t.html([
-	t.head([
-		t.el('title', 'Page Title'),
-		t.getHead()
+h.doctype('html5'),
+h.html([
+	h.head([
+		h.el('title', content.title),
+		extras.getHead()
 	]),
-	t.body([
-		t.el('header', [
-			t.el('h1', {
-				'class':'heading1',
-				'data-lol':'lolz'
-			}, 'COOL MANs'),
-			t.el('p', 'Atqui plurium venenosamque.'),
-			t.el('p', t.superEmphasise('Holy moly wow')),
-			t.el('p', 'Naufrago credis ei Taliarchum.')
+	h.body([
+		h.el('header', [
+			h.el('h1', { 'class':'heading1' }, 'Custard Demo'),
+			h.el('p', content.paragraph1),
+			h.el('p', content.superEmphasise(content.paragraph2))
 		]),
 	]),
 ])

@@ -10,68 +10,51 @@
 
 function CustardTemplate(string){
 
-	this.options = {
-		'tag_prefix' : 't'
-	};
-
-	this._compiledTemplate = this.compile(string);
+	this._tagSets = {};
+	this._compiledTemplate = '';
 
 };
 
-// --- TOOLS ---
 
-CustardTemplate.prototype.compile = function(string){
+CustardTemplate.prototype.render = function(string, callback){
 
-	return Function(this.options.tag_prefix, 'return [' + string + ']');
-
-}
-
-CustardTemplate.prototype.render = function(){
-
-	return this._compiledTemplate(this).join('');
-
-}
-
-
-// --- HELPERS ---
-
-CustardTemplate.prototype.getNested = function(inner){
-
-	var buffer = [];
+	var tagNames = [],
+		tagBodies = [];
 	
-	if ( inner instanceof Array ) {
+	for ( set in this._tagSets ) {
 	
-		for ( var i = 0; i < inner.length; ++i ) {
-		
-			buffer.push(inner[i]);
-		
-		}
-	
-	}
-	else if ( typeof inner === 'string' ) {
-	
-		buffer.push(inner);
+		tagNames.push(set);
+		tagBodies.push(this._tagSets[set]);
 	
 	}
 	
-	return buffer.join('');
-
-}
-
-
-// --- HANDLER HANDLERS ---
-
-CustardTemplate.prototype.addHandlerSet = function(set){
-
-	for ( handler in set ) {
-		this[handler] = set[handler];
+	var template = Function(tagNames.join(), 'return [' + string + ']');
+	
+	try {
+		callback(null, template.apply(this, tagBodies).join(''));
+	}
+	catch (error) {
+		callback(error);
 	}
 
 }
 
-CustardTemplate.prototype.addHandler = function(name, body){
+CustardTemplate.prototype.addTagSet = function(setname, set){
 
-	this[name] = body;
+	this._tagSets[setname] = this._tagSets[setname] || {};
+	
+	for ( tagname in set ) {
+	
+		this._tagSets[setname][tagname] = set[tagname];
+	
+	}
+
+}
+
+CustardTemplate.prototype.addTagToSet = function(setname, tagname, body){
+
+	this._tagSets[setname] = this._tagSets[setname] || {};
+	this._tagSets[setname][tagname] = body;
 
 }
 
