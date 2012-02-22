@@ -1,4 +1,4 @@
-﻿
+
 /*
 
 	Custard - A miniature javascript templating tool
@@ -8,180 +8,71 @@
 
 */
 
-var PATH = require('path'),
-	FS = require('fs'),
-	
-	template_directory = 'templates/',
-	template_suffix = '.js',
-	template_cache = 'templates/cache/',
-	caching_enabled = false;
+function CustardTemplate(string){
 
+	this.options = {
+		'tag_prefix' : 't'
+	};
 
-lex = function ( string, callback ) {
+	this._compiledTemplate = this.compile(string);
 
-	var tokens = 'try{',
-		lines = string.replace(/[\r]+/g, '').split('\n'); // Remove windows carriage returns and split string into array of lines
-	
-	for ( var i = 0, line; line = lines[i]; ++i ) {
-	
-		if ( line.charAt(0) === '%' ) {
-		
-			tokens += line.slice(1).trim();
-		
-		}
-		else {
-		
-			line = line.replace(/"/g, '\\"'); // Escape quotes
-			line = line.replace(/#\[([a-z_]+)\]/g, function(match, submatch){
-			
-				return '"+' + submatch + '+"'; // Replace tags with values
-			
-			});
-			
-			tokens += 'this.push("' + line + '");';
-		
-		}
-	
-	}
-	
-	tokens += 'return false;}catch(e){return e;}';
-	
-	callback(tokens);
+};
+
+// --- TOOLS ---
+
+CustardTemplate.prototype.compile = function(string){
+
+	return Function(this.options.tag_prefix, 'return [' + string + ']');
+
+}
+
+CustardTemplate.prototype.render = function(){
+
+	return this._compiledTemplate(this).join('');
 
 }
 
 
-render = function ( template, inputs, callback ) {
+// --- HELPERS ---
 
-	var input_keys = [],
-		input_values = [],
-		buffer = [];
+CustardTemplate.prototype.getNested = function(inner){
+
+	var buffer = [];
 	
-	for ( var input in inputs ) {
+	if ( inner instanceof Array ) {
 	
-		input_keys.push(input);
-		input_values.push(inputs[input]);
+		for ( var i = 0; i < inner.length; ++i ) {
+		
+			buffer.push(inner[i]);
+		
+		}
+	
+	}
+	else if ( typeof inner === 'string' ) {
+	
+		buffer.push(inner);
 	
 	}
 	
-	var renderer = new Function(input_keys.join(','), template),
-		error = renderer.apply(buffer, input_values);
-	
-	if ( error ) { // Error
-	
-		callback(error);
-	
-	}
-	else {
-	
-		callback(null, buffer.join('\n'));
-	
-	}
+	return buffer.join('');
 
 }
 
 
-exports.generate = function ( template_name, inputs, callback ) {
+// --- HANDLER HANDLERS ---
 
-	var path_true = template_directory + template_name + template_suffix,
-		path_cache = template_cache + template_name + template_suffix;
-	
-//	Check for cached prelexed template
-	PATH.exists(path_cache, function(exists){
-	
-		if ( exists && caching_enabled ) {
-		
-//			Render and return cached prelexed template
-			FS.readFile(path_cache, 'utf8', function(error, template){
-			
-				if ( error ) {
-				
-					callback(error);
-				
-				}
-				else {
-				
-					render(template, inputs, function(error, output){
-					
-						callback(error, output);
-					
-					});
-				
-				}
-			
-			});
-		
-		}
-		else {
-		
-//			Get unlexed file
-			FS.readFile(path_true, 'utf8', function(error, data){
-			
-				if ( error ) {
-				
-					callback(error);
-				
-				}
-				else {
-				
-//					Lex and return template
-					lex(data, function(template){
-					
-						if ( caching_enabled ) {
-						
-							FS.open(path_cache, 'w', function(error, file){
-							
-								if ( error ) {
-								
-									callback(error);
-								
-								}
-								else {
-								
-									FS.write(file, template); // Save cached version
-									
-									render(template, inputs, function(error, output){
-									
-										callback(error, output);
-									
-									});
-								
-								}
-							
-							});
-						
-						}
-						else {
-						
-							render(template, inputs, function(error, output){
-							
-								if ( error ) {
-								
-									generate('custard_error', { 'error_message' : error.toString() }, function(error, output){
-									
-										callback(error, output);
-									
-									});
-								
-								}
-								else {
-								
-									callback(error, output);
-								
-								}
-							
-							});
-						
-						}
-					
-					});
-				
-				}
-			
-			});
-		
-		}
-	
-	});
+CustardTemplate.prototype.addHandlerSet = function(set){
+
+	for ( handler in set ) {
+		this[handler] = set[handler];
+	}
 
 }
+
+CustardTemplate.prototype.addHandler = function(name, body){
+
+	this[name] = body;
+
+}
+
+module.exports = CustardTemplate;
