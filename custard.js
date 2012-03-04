@@ -11,7 +11,6 @@
 function CustardTemplate(string){
 
 	this._tagSets = {};
-	this._compiledTemplate = '';
 
 };
 
